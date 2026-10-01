@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensing with Spikes | Neuromorphic Optical Tactile Sensor</title>
+<meta name="description" content="A neuromorphic optical tactile sensor built from off-the-shelf IR LEDs and phototransistors that outputs event-driven spikes directly from an analog LIF circuit, decoded by a spiking neural network for contact force and position. IROS 2026.">
+<meta property="og:title" content="Sensing with Spikes: Neuromorphic Optical Tactile Sensor for Contact Force and Position Detection">
+<meta property="og:description" content="7 spike channels, no ADC, 0.73 N force MAE and 3.3 mm position error with an SNN decoder. IROS 2026.">
+<meta property="og:image" content="static/images/fig1.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%2316181d%22/%3E%3Cpath d=%22M4 20h5l2-10 3 14 3-18 3 14 2-6h6%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --bg-alt:#f6f7f9; --ink:#16181d; --muted:#5b6170; --line:#e3e6eb;
+    --accent:#c8102e; --accent-ink:#ffffff; --chip:#eef0f4; --code:#f3f4f7;
+    --maxw:960px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  section{padding:56px 0;border-top:1px solid var(--line)}
+  section.alt{background:var(--bg-alt)}
+  h1{font-size:clamp(28px,4.4vw,44px);line-height:1.15;letter-spacing:-.02em;margin:0 0 6px;font-weight:700}
+  h1 .sub{display:block;font-weight:500;font-size:.62em;color:var(--muted);letter-spacing:-.01em;margin-top:8px}
+  h2{font-size:28px;letter-spacing:-.015em;margin:0 0 18px;font-weight:700}
+  h3{font-size:19px;margin:28px 0 8px;font-weight:600}
+  p{margin:0 0 14px}
+  .muted{color:var(--muted)}
+
+  /* hero */
+  header.hero{padding:64px 0 36px;text-align:center}
+  .venue{display:inline-block;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid currentColor;border-radius:999px;padding:3px 12px;margin-bottom:18px}
+  .authors{margin:18px 0 4px;font-size:18px;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 16px}
+  .authors span{white-space:nowrap}
+  .affil{color:var(--muted);font-size:15px}
+  .buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;border-radius:999px;padding:9px 18px;font-weight:500;font-size:15px}
+  .btn:hover{text-decoration:none;opacity:.88}
+  .btn svg{width:17px;height:17px;fill:currentColor}
+
+  /* media */
+  figure{margin:0}
+  .media{border-radius:12px;overflow:hidden;background:#000;box-shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.06)}
+  .media video{display:block;width:100%;height:auto}
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+  .fig img{display:block;width:100%;height:auto}
+  figcaption{font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+  figcaption b{color:var(--ink);font-weight:600}
+  .clip-label{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--chip);color:var(--ink);border-radius:6px;padding:2px 8px;margin-right:6px}
+
+  .teaser{margin-top:36px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px 0 0}
+  .stat{background:var(--bg-alt);border-radius:12px;padding:16px 12px;text-align:center}
+  .stat b{display:block;font-size:26px;letter-spacing:-.02em;line-height:1.2}
+  .stat span{font-size:13.5px;color:var(--muted)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  .grid2.media-text{grid-template-columns:1.25fr 1fr;align-items:center}
+  .stack{display:grid;gap:22px}
+  .narrow{max-width:760px;margin-left:auto;margin-right:auto}
+
+  ul.points{padding-left:20px;margin:0 0 14px} ul.points li{margin-bottom:6px}
+
+  table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+  th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line)}
+  th{font-weight:600;background:var(--bg-alt)}
+  td.m,th.m{text-align:left}
+  tr.ours td{font-weight:600;background:#fdf1f3}
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+
+  pre{background:var(--code);border-radius:10px;padding:18px;overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13.5px;line-height:1.55;margin:0}
+  .copy{float:right;font:500 13px Inter,sans-serif;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+
+  footer{padding:36px 0 48px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);text-align:center}
+
+  @media (max-width:760px){
+    body{font-size:16px}
+    section{padding:40px 0}
+    header.hero{padding:40px 0 24px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .grid2,.grid2.media-text{grid-template-columns:1fr}
+    .authors{gap:0 12px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="venue">IROS 2026</div>
+    <h1>Sensing with Spikes
+      <span class="sub">Neuromorphic Optical Tactile Sensor for Contact Force and Position Detection</span>
+    </h1>
+    <div class="authors">
+      <span>Tae Myung Huh</span><span>JieLiang Lin</span><span>Sean Cheng</span><span>Assel Kembay</span><span>Jason Eshraghian</span>
+    </div>
+    <div class="affil">Department of Electrical and Computer Engineering, University of California, Santa Cruz</div>
+    <div class="buttons">
+      <a class="btn" href="static/paper.pdf" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L17.5 8H14zM8 13h8v1.5H8zm0 3h8v1.5H8zm0-6h4v1.5H8z"/></svg>Paper</a>
+      <a class="btn" href="#video">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Video</a>
+      <!-- Uncomment when available:
+      <a class="btn" href="https://arxiv.org/abs/XXXX.XXXXX" target="_blank" rel="noopener">arXiv</a>
+      <a class="btn" href="https://github.com/ORG/REPO" target="_blank" rel="noopener">Code</a>
+      -->
+      <a class="btn" href="#bibtex">
+        <svg viewBox="0 0 24 24"><path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6z"/></svg>BibTeX</a>
+    </div>
+
+    <figure class="teaser">
+      <div class="media">
+        <video autoplay muted loop playsinline preload="auto" poster="static/videos/center_press.jpg">
+          <source src="static/videos/center_press.mp4" type="video/mp4">
+        </video>
+      </div>
+      <figcaption>Pressing the sensor center. No spikes are emitted at rest; once force exceeds ~3&nbsp;N the artificial-neuron circuit starts firing, and the spike rate climbs with load. The oscilloscope shows the membrane potential of the Ch1 and Ch3 neurons.</figcaption>
+    </figure>
+
+    <div class="stats">
+      <div class="stat"><b>7</b><span>spike channels</span></div>
+      <div class="stat"><b>0 ADCs</b><span>spikes made in analog</span></div>
+      <div class="stat"><b>0.73 N</b><span>force MAE (15 N range)</span></div>
+      <div class="stat"><b>3.3 mm</b><span>position error</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="abstract">
+  <div class="wrap narrow">
+    <h2>Abstract</h2>
+    <p>We present a neuromorphic optical tactile sensor capable of detecting contact force and position across a 40&nbsp;mm sensing area using only 7 channels of event-driven digital spike signals. Unlike prior neuromorphic tactile sensors that rely on exotic materials such as memristors or PiezoFETs, or bulky event-based cameras, our design is built entirely from off-the-shelf components — IR LEDs and phototransistors embedded in silicone rubber — eliminating the need for ADC conversion or microcontroller-based polling. The sensor operates on an analog Leaky Integrate-and-Fire (LIF) circuit that generates sparse voltage spikes directly from optical signals, where spike firing rate encodes applied force and spatial firing patterns encode contact location. To decode these signals, we employ a Spiking Neural Network (SNN) trained on 714 recordings across multiple probe sizes. The best configuration achieves a force estimation MAE of 0.73&nbsp;N and a mean distance error of 3.3&nbsp;mm, demonstrating that rich tactile information can be extracted from a sparse, low-channel neuromorphic front-end.</p>
+  </div>
+</section>
+
+<section id="design" class="alt">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <div class="grid2">
+      <figure class="fig">
+        <img src="static/images/fig1.png" alt="Sensor photo and cross-section: IR LED and phototransistor embedded in silicone under a spray-coated layer, producing voltage spike outputs" loading="lazy">
+        <figcaption><b>Optical transduction.</b> Pressing deforms the spray-coated silicone surface, reducing the IR light reaching each phototransistor. Its output drives an artificial neuron circuit that emits voltage spikes.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="static/images/fig2.png" alt="LIF neuron circuit model with Schmitt trigger; membrane potential with and without spikes" loading="lazy">
+        <figcaption><b>Neuron-inspired circuit.</b> A leaky RC "membrane" is charged by the PWM phototransistor current. With no contact it stays above the Schmitt-trigger threshold (b); under contact the current drops, the potential crosses the threshold and fires a spike, then resets via a P-MOSFET (c).</figcaption>
+      </figure>
+    </div>
+    <h3>Built from off-the-shelf parts</h3>
+    <div class="grid2 media-text">
+      <figure class="fig">
+        <img src="static/images/fig4.png" alt="Fabrication steps: insert LEDs and phototransistors, cast clear silicone, spray coat, assemble cover" loading="lazy">
+      </figure>
+      <div>
+        <ul class="points">
+          <li>Seven IR LED / phototransistor pairs alternate around a 79&nbsp;mm 3D-printed housing lined with reflective Mylar, so each LED also lights neighboring receivers.</li>
+          <li>Clear silicone (8&nbsp;mm thick) is cast over them, then airbrushed with a reflective metallic coating.</li>
+          <li>A cover leaves a 57&nbsp;mm active contact area. One PCB carries all 7 neuron circuits; a microcontroller only timestamps spikes (1&nbsp;µs resolution). It never samples analog values.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="force">
+  <div class="wrap">
+    <h2>Force is encoded in spike rate</h2>
+    <p class="narrow" style="margin-left:0">Below ~3&nbsp;N the sensor is silent, so it is event-driven by construction. Above that, firing rate rises with force: gradually from 3–10&nbsp;N, steeply from 10–12&nbsp;N, then saturating near 14&nbsp;N.</p>
+    <div class="grid2">
+      <figure class="fig">
+        <img src="static/images/fig7.png" alt="Force ramp over time with spike rasters for channels 1 to 7" loading="lazy">
+        <figcaption>Spikes on all 7 channels while a 10&nbsp;mm probe ramps up to 15&nbsp;N at the center.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="static/images/fig8.png" alt="Spike firing rate versus force for channels 2, 4 and 6" loading="lazy">
+        <figcaption>Firing rate vs. center force for selected channels.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="location" class="alt">
+  <div class="wrap">
+    <h2>Contact location changes which channels fire</h2>
+    <p>Each channel's light path crosses the sensor differently, so pressing off-center mainly excites the channels whose paths run nearest the contact. In these clips the probe sits over a single light path, and the neuron on that path fires while the other stays quiet or fires only weakly.</p>
+    <div class="grid2">
+      <figure>
+        <div class="media">
+          <video muted loop playsinline preload="none" poster="static/videos/ch1_press.jpg" data-autoplay>
+            <source src="static/videos/ch1_press.mp4" type="video/mp4">
+          </video>
+        </div>
+        <figcaption><span class="clip-label">Ch1 path</span>Only the Ch1 neuron (yellow) spikes.</figcaption>
+      </figure>
+      <figure>
+        <div class="media">
+          <video muted loop playsinline preload="none" poster="static/videos/ch3_press.jpg" data-autoplay>
+            <source src="static/videos/ch3_press.mp4" type="video/mp4">
+          </video>
+        </div>
+        <figcaption><span class="clip-label">Ch3 path</span>The Ch3 neuron (blue) dominates.</figcaption>
+      </figure>
+    </div>
+    <h3>All seven channels</h3>
+    <div class="grid2 media-text">
+      <figure class="fig">
+        <img src="static/images/fig9.png" alt="Firing rate visualizations for six contact conditions; line width proportional to each channel's firing rate" loading="lazy">
+      </figure>
+      <div>
+        <p>Each line is one LED→phototransistor path, drawn with width proportional to its firing rate. The black dot marks the probe.</p>
+        <ul class="points">
+          <li><b>(b)</b> A center press disrupts all seven paths, and every channel fires strongly.</li>
+          <li><b>(c→d)</b> At the same spot, more force intensifies firing and spreads it to neighboring channels.</li>
+          <li><b>(e, f)</b> Similar forces at nearby spots produce clearly different patterns.</li>
+        </ul>
+        <p class="muted">Channels orthogonal to the contact also respond, likely through light bouncing off the reflective walls. That gives the decoder extra spatial cues.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <h2>Data collection</h2>
+    <div class="grid2 media-text">
+      <figure>
+        <div class="media">
+          <video muted loop playsinline preload="none" poster="static/videos/robot_collection.jpg" data-autoplay>
+            <source src="static/videos/robot_collection.mp4" type="video/mp4">
+          </video>
+        </div>
+        <figcaption>A Franka Research 3 arm presses the sensor at random locations and forces while an ATI Gamma load cell underneath records ground truth.</figcaption>
+      </figure>
+      <div>
+        <ul class="points">
+          <li>357 random contact locations per probe, with dome-tip probes of 10&nbsp;mm and 12&nbsp;mm diameter (~714 recordings total).</li>
+          <li>Each press ramps up over 1.5&nbsp;s, holds for 1.5&nbsp;s, then releases. Cartesian impedance control keeps the probe vertical.</li>
+          <li>Train/test split is 80/20 at the recording level, to prevent leakage.</li>
+        </ul>
+        <figure class="fig" style="margin-top:14px">
+          <img src="static/images/fig6.png" alt="Probe geometries and map of tested contact locations colored by press force" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="snn" class="alt">
+  <div class="wrap">
+    <h2>Decoding spikes with a spiking neural network</h2>
+    <div class="grid2 media-text">
+      <figure class="fig">
+        <img src="static/images/fig10.png" alt="SNN architecture: 7 spike channels into fully connected LIF layers, outputting Fz, X, Y" loading="lazy">
+      </figure>
+      <div>
+        <p>Spike counts from the 7 channels are binned at 30&nbsp;Hz and fed to a fully connected SNN of LIF neurons (256–512–256, β&nbsp;=&nbsp;0.95), trained with <a href="https://github.com/jeshraghian/snntorch" target="_blank" rel="noopener">snnTorch</a>. It jointly regresses contact force <i>F<sub>z</sub></i> and position (<i>x</i>, <i>y</i>).</p>
+      </div>
+    </div>
+
+    <h3>Accuracy</h3>
+    <figure class="fig" style="max-width:720px;margin:0 auto">
+      <img src="static/images/fig11.png" alt="Predicted versus true force, X and Y with R squared values, and histograms of force and distance error" loading="lazy">
+      <figcaption>Test-set predictions (t<sub>win</sub>&nbsp;=&nbsp;0.5&nbsp;s). Force R²&nbsp;=&nbsp;0.92; position R²&nbsp;≈&nbsp;0.82. The 90th-percentile force error is ~10% of the range. Position is harder to decode, because it depends on the spatial pattern across channels as well as on overall rate.</figcaption>
+    </figure>
+
+    <h3>Comparison with non-spiking baselines</h3>
+    <p>All models use the same binned spike input, loss and split. The SNN matches GRU/LSTM accuracy at 0.5&nbsp;s and is best at 0.2&nbsp;s. It uses far fewer dense MACs, with most of its compute as sparse, spike-driven synaptic operations.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>t<sub>win</sub></th><th class="m">Model</th><th>F<sub>z</sub> R²</th><th>F<sub>z</sub> MAE (N)</th><th>X,Y R²</th><th>MDE (mm)</th><th>Params</th><th>MACs</th><th>SynOps</th></tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="4">0.5 s</td><td class="m">MLP</td><td>0.91</td><td>0.79</td><td>0.69</td><td>4.7</td><td>292.9K</td><td>289.8K</td><td>–</td></tr>
+          <tr><td class="m">GRU</td><td>0.93</td><td>0.68</td><td>0.80</td><td>3.4</td><td>993.8K</td><td>14.8M</td><td>–</td></tr>
+          <tr><td class="m">LSTM</td><td>0.92</td><td>0.71</td><td>0.79</td><td>3.4</td><td>1.32M</td><td>19.8M</td><td>–</td></tr>
+          <tr class="ours"><td class="m">SNN</td><td>0.92</td><td>0.73</td><td>0.82</td><td>3.3</td><td>267.8K</td><td>26.9K</td><td>1.55M</td></tr>
+          <tr><td rowspan="4">0.2 s</td><td class="m">MLP</td><td>0.88</td><td>0.91</td><td>0.61</td><td>5.7</td><td>276.7K</td><td>273.7K</td><td>–</td></tr>
+          <tr><td class="m">GRU</td><td>0.89</td><td>0.83</td><td>0.66</td><td>5.0</td><td>993.8K</td><td>5.93M</td><td>–</td></tr>
+          <tr><td class="m">LSTM</td><td>0.90</td><td>0.83</td><td>0.67</td><td>4.9</td><td>1.32M</td><td>7.91M</td><td>–</td></tr>
+          <tr class="ours"><td class="m">SNN</td><td>0.90</td><td>0.80</td><td>0.76</td><td>3.9</td><td>267.8K</td><td>10.8K</td><td>604.9K</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:8px">MACs and SynOps are architecture-level compute proxies, not system-level energy measurements.</p>
+
+    <h3>Real-time streaming prediction</h3>
+    <div class="grid2 media-text">
+      <figure class="fig">
+        <img src="static/images/fig12.png" alt="Streaming force and position predictions versus measurements for 0.5 s and 0.2 s training windows" loading="lazy">
+      </figure>
+      <div>
+        <p>Spikes are fed to the SNN in a continuous stream, with no explicit segmentation. A 0.5&nbsp;s training window gives smoother but delayed force tracking (34&nbsp;ms lag). A 0.2&nbsp;s window cuts the lag to 2&nbsp;ms, at the cost of noisier output.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="video">
+  <div class="wrap">
+    <h2>Full video</h2>
+    <div class="media">
+      <video controls playsinline preload="none" poster="static/videos/full_video.jpg">
+        <source src="static/videos/full_video.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:10px">Supplementary video (55 s, no audio). <a href="static/videos/full_video.mp4" download>Download MP4</a></p>
+  </div>
+</section>
+
+<section id="bibtex" class="alt">
+  <div class="wrap">
+    <h2>BibTeX</h2>
+    <button class="copy" type="button" onclick="copyBib(this)">Copy</button>
+    <pre id="bib">@inproceedings{huh2026sensing,
+  title     = {Sensing with Spikes: Neuromorphic Optical Tactile Sensor for Contact Force and Position Detection},
+  author    = {Huh, Tae Myung and Lin, JieLiang and Cheng, Sean and Kembay, Assel and Eshraghian, Jason},
+  booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  year      = {2026}
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Tactile Manipulation Lab · University of California, Santa Cruz<br>
+    Contact: <a href="mailto:thuh@ucsc.edu">thuh@ucsc.edu</a>
+  </div>
+</footer>
+
+<script>
+  // Play looping clips only while on screen (saves bandwidth and battery).
+  (function(){
+    var vids = document.querySelectorAll('video[data-autoplay]');
+    if (!('IntersectionObserver' in window)) { vids.forEach(function(v){ v.preload='auto'; v.play().catch(function(){}); }); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var v = e.target;
+        if (e.isIntersecting) { v.preload = 'auto'; v.play().catch(function(){}); }
+        else { v.pause(); }
+      });
+    }, {threshold: 0.35});
+    vids.forEach(function(v){ io.observe(v); });
+  })();
+  function copyBib(btn){
+    var t = document.getElementById('bib').innerText;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){
+      btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy';},1500);
+    }).catch(function(){ btn.textContent='Select & copy'; });
+  }
+</script>
+</body>
+</html>
